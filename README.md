@@ -2,52 +2,70 @@
 
 AI-assisted travel stay browser and booking concierge (MVP learning project).
 
-## Block 0 — how to run
+## Architecture
 
-Prerequisites: Docker, Python 3.11+, Node 20+, `[uv](https://docs.astral.sh/uv/)`.
+Three processes, each its own container. That is the shape a later Kubernetes cluster would use: one Deployment per service, an Ingress in front of `web`, and Postgres either in-cluster or a managed database.
+
+| Piece | Image | Role | Host port |
+|-------|-------|------|-----------|
+| Database | `postgres:16` | Persistent data | **5432** |
+| API | `backend/Dockerfile` (FastAPI + Uvicorn) | JSON API (`/health`, later booking + chat) | **8000** |
+| Web | `frontend/Dockerfile` (built React app served by nginx) | Browser UI. nginx proxies `/api` to the `api` service | **8080** |
+
+FastAPI is the API framework; Uvicorn is the HTTP server inside the API container. The React UI is a built static site, not Vite's dev server, so the web container does not need Node at runtime.
+
+The browser always calls `/api/...`. Local Vite and container nginx both strip that prefix before FastAPI sees the path (`/api/health` becomes `/health`).
+
+## Prerequisites
+
+Docker. For hot-reload development on the host you also need Python 3.11+, Node 20+, and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
 export PATH="$PWD/.venv/bin:$(brew --prefix node@20)/bin:$PATH"
+cp .env.example .env
 ```
 
-### Architecture
+## Full stack in containers
 
+Stop any host process already bound to ports 8000 or 5173, then:
 
-| Piece    | Tech                                   | Role                                             |
-| -------- | -------------------------------------- | ------------------------------------------------ |
-| Database | Postgres (Docker)                      | Persistent data                                  |
-| Backend  | **FastAPI** app served by **Uvicorn**  | JSON API (`/health`, later booking + chat)       |
-| Frontend | React + TypeScript via **Vite** (Node) | Browser UI; Vite compiles TS/JSX and hot-reloads |
+```bash
+docker compose up -d --build
+```
 
+- UI: http://localhost:8080
+- API: http://localhost:8000/health
+- UI → API: http://localhost:8080/api/health
 
-FastAPI is the API framework; Uvicorn is the HTTP server that runs it (`uvicorn app.main:app`). The React UI is a separate SPA, so it uses a Node/Vite dev server rather than a single FastAPI `GET /` HTML page—that keeps the TypeScript toolchain, client routing, and hot reload usable while FastAPI stays focused on the API.
+```bash
+docker compose down          # stop containers
+docker compose down -v       # also delete Postgres data
+```
 
-### Startup
+## Host dev (hot reload)
 
+Use this when you are changing code. Only Postgres stays in Docker.
 
-| Piece                         | Command                                                                                                                     | Port     |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------- |
-| Database (Postgres)           | `docker compose up -d`                                                                                                      | **5432** |
-| Backend (FastAPI via Uvicorn) | `cp .env.example .env` (once), then `cd backend && uv sync --group dev && uv run uvicorn app.main:app --reload --port 8000` | **8000** |
-| Frontend (Vite React)         | `cd frontend && npm install && npm run dev`                                                                                 | **5173** |
+```bash
+docker compose up -d db
 
+# terminal 2
+cd backend && uv sync --group dev && uv run uvicorn app.main:app --reload --port 8000
 
-Run the backend and frontend each in their own terminal (the database can stay in the background).
+# terminal 3
+cd frontend && npm install && npm run dev
+```
 
-- Health: [http://localhost:8000/health](http://localhost:8000/health)
-- UI: [http://localhost:5173](http://localhost:5173)
-- UI → API proxy: the browser calls `/api/...` on **5173**; Vite forwards to FastAPI on **8000**
+| Piece | Shutdown |
+|-------|----------|
+| Frontend | `Ctrl+C` in the `npm run dev` terminal |
+| Backend | `Ctrl+C` in the `uvicorn` terminal |
+| Database | `docker compose stop db` |
 
+- Health: http://localhost:8000/health
+- UI: http://localhost:5173
+- Vite proxy: `/api` on **5173** forwards to FastAPI on **8000**
 
-
-### Shutdown
-
-
-| Piece    | Command                                                                  |
-| -------- | ------------------------------------------------------------------------ |
-| Frontend | `Ctrl+C` in the `npm run dev` terminal                                   |
-| Backend  | `Ctrl+C` in the `uvicorn` terminal                                       |
-| Database | `docker compose down` (add `-v` only if you also want to delete DB data) |
-
+Do not run host Uvicorn and the `api` container at the same time. Both want port 8000.
 
 Later blocks add domain models, booking UI, the OpenAI concierge agent, and CI.
