@@ -68,4 +68,21 @@ cd frontend && npm install && npm run dev
 
 Do not run host Uvicorn and the `api` container at the same time. Both want port 8000.
 
-Later blocks add domain models, booking UI, the OpenAI concierge agent, and CI.
+## Domain data
+
+From `backend/`, with Postgres running:
+
+```bash
+uv sync --group dev
+uv run alembic upgrade head
+uv run python -m app.seed
+```
+
+That loads demo guest Alex (`user id` 1), about two dozen properties, and one upcoming reservation. Seed skips itself if properties already exist.
+
+- Catalog: http://localhost:8000/docs
+- Example: http://localhost:8000/properties?city=Austin&max_price=200&guests=2
+
+If the API is the Compose container, rebuild it after this change so it includes the new routes: `docker compose up -d --build api`. Migrations still run from the host against the published Postgres port.
+
+Later blocks add the booking UI, the OpenAI concierge agent, and CI.
