@@ -28,8 +28,13 @@ a {
   text-decoration: none;
 }
 
-button {
+button,
+input,
+select {
   font: inherit;
+}
+
+button {
   cursor: pointer;
   border: 1px solid #1c2430;
   background: #1c2430;
@@ -42,8 +47,13 @@ button:disabled {
   cursor: wait;
 }
 
+.button-secondary {
+  background: transparent;
+  color: #1c2430;
+}
+
 .page {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -53,7 +63,7 @@ button:disabled {
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
 }
 
 .brand {
@@ -68,11 +78,13 @@ button:disabled {
   font-size: 0.95rem;
 }
 
-.nav a:hover {
+.nav a:hover,
+.nav a.active {
   text-decoration: underline;
 }
 
-.hero h1 {
+.hero h1,
+.detail h1 {
   margin: 0 0 0.5rem;
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 500;
@@ -84,32 +96,172 @@ button:disabled {
   color: #4a5563;
 }
 
-.health-panel {
-  display: grid;
-  gap: 1rem;
-  padding: 1.25rem 0;
-  border-top: 1px solid #c9d0d8;
-  border-bottom: 1px solid #c9d0d8;
-}
-
-.health-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin: 0;
-}
-
-.health-grid dt {
-  margin: 0;
-  font-size: 0.85rem;
+.eyebrow {
+  margin: 0 0 0.35rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
   color: #5b6573;
 }
 
-.health-grid dd {
-  margin: 0.25rem 0 0;
-  font-size: 1.5rem;
+.price {
+  margin: 0 0 1.5rem;
+  font-size: 1.35rem;
+}
+
+.price span,
+.muted {
+  color: #5b6573;
+  font-size: 0.95rem;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #c9d0d8;
+}
+
+.filter-bar label,
+.book-form label,
+.inline-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5b6573;
+}
+
+.filter-bar input,
+.filter-bar select,
+.book-form input,
+.inline-form input {
+  border: 1px solid #c9d0d8;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.5rem 0.6rem;
+  color: #1c2430;
+}
+
+.result-count {
+  margin: 0 0 1rem;
+  color: #5b6573;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.property-card,
+.reservation-card,
+.book-form {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1.1rem 0;
+  border-top: 1px solid #c9d0d8;
+}
+
+.property-image,
+.detail-image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  display: block;
+  background: #d7dde5;
+}
+
+.detail-image {
+  margin: 0 0 1.25rem;
+  aspect-ratio: 21 / 9;
+}
+
+.property-card h2,
+.reservation-card h2,
+.detail h2,
+.book-form h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.property-card p,
+.reservation-card p {
+  margin: 0;
+  color: #4a5563;
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5b6573;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.8fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.chip-list,
+.nearby-list,
+.stack {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip-list li {
+  border: 1px solid #c9d0d8;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.9rem;
+}
+
+.nearby-list li {
+  margin-bottom: 0.85rem;
+}
+
+.nearby-list p {
+  margin: 0.2rem 0 0;
+  color: #4a5563;
+}
+
+.book-form {
+  border: 1px solid #c9d0d8;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.reservation-actions {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.issue-form {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .status-ok {
@@ -122,4 +274,15 @@ button:disabled {
 
 .status-bad {
   color: #9b1c1c;
+}
+
+@media (max-width: 720px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inline-form,
+  .issue-form {
+    grid-template-columns: 1fr;
+  }
 }

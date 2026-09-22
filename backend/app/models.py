@@ -44,6 +44,7 @@ class Property(Base):
     max_guests: Mapped[int] = mapped_column(Integer)
     amenities: Mapped[list[Any]] = mapped_column(JSONB)
     house_rules: Mapped[str] = mapped_column(Text)
+    image_url: Mapped[str] = mapped_column(String(500))
     lat: Mapped[float] = mapped_column(Float)
     lng: Mapped[float] = mapped_column(Float)
     nearby: Mapped[list[Any]] = mapped_column(JSONB)

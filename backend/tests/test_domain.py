@@ -46,6 +46,7 @@ def _property(db_session, **overrides) -> Property:
         "max_guests": 2,
         "amenities": ["wifi"],
         "house_rules": "No parties.",
+        "image_url": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
         "lat": 0.0,
         "lng": 0.0,
         "nearby": [{"name": "Test Cafe", "kind": "restaurant", "blurb": "Nearby."}],
