@@ -19,6 +19,7 @@ class PropertyOut(BaseModel):
     max_guests: int
     amenities: list[str]
     house_rules: str
+    image_url: str
     lat: float
     lng: float
     nearby: list[NearbySpot]

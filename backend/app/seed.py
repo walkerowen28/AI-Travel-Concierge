@@ -17,6 +17,7 @@ DEMO_EMAIL = "alex@example.com"
 PROPERTIES: list[dict] = [
     {
         "title": "Rainey Street Loft",
+        "image_url": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
         "city": "Austin",
         "price_per_night": 189,
         "max_guests": 2,
@@ -32,6 +33,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "East Austin Bungalow",
+        "image_url": "https://images.unsplash.com/photo-1560448204-603b3fc33ddc?auto=format&fit=crop&w=1200&q=80",
         "city": "Austin",
         "price_per_night": 240,
         "max_guests": 4,
@@ -47,6 +49,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Zilker Garden Studio",
+        "image_url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
         "city": "Austin",
         "price_per_night": 165,
         "max_guests": 2,
@@ -62,6 +65,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Alberta Arts Apartment",
+        "image_url": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80",
         "city": "Portland",
         "price_per_night": 155,
         "max_guests": 2,
@@ -77,6 +81,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Hawthorne House",
+        "image_url": "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80",
         "city": "Portland",
         "price_per_night": 210,
         "max_guests": 5,
@@ -92,6 +97,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Pearl District Studio",
+        "image_url": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
         "city": "Portland",
         "price_per_night": 198,
         "max_guests": 2,
@@ -107,6 +113,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Alfama Overlook",
+        "image_url": "https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=1200&q=80",
         "city": "Lisbon",
         "price_per_night": 175,
         "max_guests": 3,
@@ -122,6 +129,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Principe Real Flat",
+        "image_url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
         "city": "Lisbon",
         "price_per_night": 220,
         "max_guests": 4,
@@ -137,6 +145,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Baixa Studio",
+        "image_url": "https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1200&q=80",
         "city": "Lisbon",
         "price_per_night": 140,
         "max_guests": 2,
@@ -152,6 +161,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Yanaka Lane House",
+        "image_url": "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80",
         "city": "Tokyo",
         "price_per_night": 160,
         "max_guests": 3,
@@ -167,6 +177,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Shimokitazawa Apartment",
+        "image_url": "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80",
         "city": "Tokyo",
         "price_per_night": 145,
         "max_guests": 2,
@@ -182,6 +193,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Asakusa Family Room",
+        "image_url": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
         "city": "Tokyo",
         "price_per_night": 210,
         "max_guests": 5,
@@ -197,6 +209,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "RiNo Loft",
+        "image_url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
         "city": "Denver",
         "price_per_night": 175,
         "max_guests": 2,
@@ -212,6 +225,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Highland Cottage",
+        "image_url": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
         "city": "Denver",
         "price_per_night": 230,
         "max_guests": 4,
@@ -227,6 +241,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Capitol Hill Room",
+        "image_url": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80",
         "city": "Denver",
         "price_per_night": 120,
         "max_guests": 2,
@@ -242,6 +257,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Logan Square Flat",
+        "image_url": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80",
         "city": "Chicago",
         "price_per_night": 168,
         "max_guests": 3,
@@ -257,6 +273,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Wicker Park Walk-up",
+        "image_url": "https://images.unsplash.com/photo-1600047509358-9dc75507daeb?auto=format&fit=crop&w=1200&q=80",
         "city": "Chicago",
         "price_per_night": 195,
         "max_guests": 4,
@@ -272,6 +289,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Lincoln Park Greystone",
+        "image_url": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1200&q=80",
         "city": "Chicago",
         "price_per_night": 260,
         "max_guests": 6,
@@ -287,6 +305,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Montford Cabin",
+        "image_url": "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80",
         "city": "Asheville",
         "price_per_night": 185,
         "max_guests": 4,
@@ -302,6 +321,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Downtown Asheville Loft",
+        "image_url": "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
         "city": "Asheville",
         "price_per_night": 205,
         "max_guests": 2,
@@ -317,6 +337,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "West Asheville Cottage",
+        "image_url": "https://images.unsplash.com/photo-1560184897-ae75f418493e?auto=format&fit=crop&w=1200&q=80",
         "city": "Asheville",
         "price_per_night": 150,
         "max_guests": 3,
@@ -332,6 +353,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Fremont Apartment",
+        "image_url": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80",
         "city": "Seattle",
         "price_per_night": 172,
         "max_guests": 2,
@@ -347,6 +369,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Ballard House",
+        "image_url": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80",
         "city": "Seattle",
         "price_per_night": 240,
         "max_guests": 5,
@@ -362,6 +385,7 @@ PROPERTIES: list[dict] = [
     },
     {
         "title": "Capitol Hill Studio",
+        "image_url": "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=80",
         "city": "Seattle",
         "price_per_night": 158,
         "max_guests": 2,
@@ -383,7 +407,18 @@ def seed() -> None:
     try:
         existing = db.scalar(select(func.count()).select_from(Property))
         if existing:
-            print(f"Catalog already has {existing} properties; skipping seed.")
+            by_title = {row["title"]: row["image_url"] for row in PROPERTIES}
+            updated = 0
+            for prop in db.scalars(select(Property)):
+                wanted = by_title.get(prop.title)
+                if wanted and prop.image_url != wanted:
+                    prop.image_url = wanted
+                    updated += 1
+            db.commit()
+            print(
+                f"Catalog already has {existing} properties; "
+                f"updated image_url on {updated}."
+            )
             return
 
         user = db.scalar(select(User).where(User.email == DEMO_EMAIL))

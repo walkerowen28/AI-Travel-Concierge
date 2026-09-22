@@ -80,9 +80,18 @@ uv run python -m app.seed
 
 That loads demo guest Alex (`user id` 1), about two dozen properties, and one upcoming reservation. Seed skips itself if properties already exist.
 
-- Catalog: http://localhost:8000/docs
-- Example: http://localhost:8000/properties?city=Austin&max_price=200&guests=2
+### UI (Block 2)
 
-If the API is the Compose container, rebuild it after this change so it includes the new routes: `docker compose up -d --build api`. Migrations still run from the host against the published Postgres port.
+| Route | What it does |
+|-------|----------------|
+| `/` | Browse + filters |
+| `/properties/:id` | Detail, house rules, nearby, book form |
+| `/reservations` | Cancel, extend, report issue |
 
-Later blocks add the booking UI, the OpenAI concierge agent, and CI.
+- Vite: http://localhost:5173
+- Container web: http://localhost:8080
+- API docs: http://localhost:8000/docs
+
+If the API is the Compose container, rebuild it after backend changes: `docker compose up -d --build api`. Rebuild the web image after frontend changes: `docker compose up -d --build web`. Migrations still run from the host against the published Postgres port.
+
+Later blocks add the OpenAI concierge agent and CI.
