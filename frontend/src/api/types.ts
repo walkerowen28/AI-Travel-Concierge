@@ -51,3 +51,18 @@ export type Issue = {
   description: string
   status: string
 }
+
+export type ChatMessage = {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export type ToolTrace = {
+  tool: string
+  detail: string
+}
+
+export type ChatResponse = {
+  message: string
+  tool_traces: ToolTrace[]
+}

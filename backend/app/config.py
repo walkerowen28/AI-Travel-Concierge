@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://postgres:postgres@localhost:5432/travel_concierge"
     )
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4.1-mini"
 
 
 @lru_cache

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ApiError,
@@ -98,6 +99,12 @@ export function ReservationCard({ reservation }: Props) {
 
       {isConfirmed && (
         <div className="reservation-actions">
+          <Link
+            className="button-secondary link-button"
+            to={`/reservations?reservation_id=${reservation.id}`}
+          >
+            Chat about this stay
+          </Link>
           <button
             type="button"
             className="button-secondary"
