@@ -31,3 +31,6 @@ Thumbs.db
 
 # Docker
 postgres_data/
+
+# Local tool binaries (make k8s-tools)
+.bin/

@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: travel
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: travel-concierge
+
+# The db-migrate Job lives in jobs/ and is run separately (`make k8s-migrate`),
+# because Jobs are immutable and must finish before the API is useful.
+resources:
+  - namespace.yaml
+  - config.yaml
+  - postgres.yaml
+  - api.yaml
+  - web.yaml
