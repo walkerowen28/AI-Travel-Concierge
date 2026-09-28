@@ -5,6 +5,7 @@ from sqlalchemy import text
 
 from app.db import engine
 from app.errors import ConflictError, NotFoundError, ValidationError
+from app.routers.chat import router as chat_router
 from app.routers.properties import router as properties_router
 from app.routers.reservations import router as reservations_router
 
@@ -12,6 +13,7 @@ app = FastAPI(title="AI Travel Concierge")
 
 app.include_router(properties_router)
 app.include_router(reservations_router)
+app.include_router(chat_router)
 
 
 @app.exception_handler(NotFoundError)

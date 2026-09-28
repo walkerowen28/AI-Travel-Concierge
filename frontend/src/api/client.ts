@@ -1,5 +1,7 @@
 import type {
   BookReservationInput,
+  ChatMessage,
+  ChatResponse,
   Issue,
   Property,
   PropertyFilters,
@@ -98,5 +100,18 @@ export function reportIssue(id: number, description: string): Promise<Issue> {
   return request<Issue>(`/api/reservations/${id}/issues`, {
     method: 'POST',
     body: JSON.stringify({ description }),
+  })
+}
+
+export function sendChat(
+  messages: ChatMessage[],
+  reservationId?: number | null,
+): Promise<ChatResponse> {
+  return request<ChatResponse>('/api/chat', {
+    method: 'POST',
+    body: JSON.stringify({
+      messages,
+      reservation_id: reservationId ?? null,
+    }),
   })
 }

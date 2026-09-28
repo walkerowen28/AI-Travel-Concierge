@@ -11,6 +11,8 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     "httpx>=0.28.0",
     "alembic>=1.20.0",
+    "cryptography>=43,<45",
+    "openai-agents>=0.22.3",
 ]
 
 [dependency-groups]

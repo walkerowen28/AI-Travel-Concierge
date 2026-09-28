@@ -94,4 +94,18 @@ That loads demo guest Alex (`user id` 1), about two dozen properties, and one up
 
 If the API is the Compose container, rebuild it after backend changes: `docker compose up -d --build api`. Rebuild the web image after frontend changes: `docker compose up -d --build web`. Migrations still run from the host against the published Postgres port.
 
-Later blocks add the OpenAI concierge agent and CI.
+### AI Concierge (Block 3)
+
+Set `OPENAI_API_KEY` in `.env`, then restart the API (host or `docker compose up -d --build api`).
+
+- Chat endpoint: `POST /chat` with `{ "messages": [{ "role": "user", "content": "..." }], "reservation_id": 1 }`
+- UI: floating **AI Concierge** button on every page; tool traces show as `tool used: search_properties`
+- On Reservations, **Chat about this stay** sets `?reservation_id=` context for house rules / nearby / extend
+
+Example prompts:
+- “quiet loft in Austin under $200 for 2”
+- “what are the house rules for my stay?”
+- “what’s nearby for dinner?”
+- “extend my stay by 2 nights” (with a reservation context)
+
+Later: GitHub Actions CI.
