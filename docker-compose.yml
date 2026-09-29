@@ -17,8 +17,6 @@ services:
 
   api:
     build: ./backend
-    env_file:
-      - .env
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/travel_concierge
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}

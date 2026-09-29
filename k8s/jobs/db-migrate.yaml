@@ -1,0 +1,48 @@
+# Runs once per deploy instead of in API startup, so two API replicas never race on
+# `alembic upgrade`. Seed skips itself when properties already exist.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  namespace: travel
+  labels:
+    app.kubernetes.io/part-of: travel-concierge
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: db-migrate
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - until pg_isready -h db -p 5432; do echo waiting for db; sleep 2; done
+      containers:
+        - name: migrate
+          image: travel-api:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "alembic upgrade head && python -m app.seed"]
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_DB
+            - name: DATABASE_URL
+              value: postgresql+psycopg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSTGRES_DB)

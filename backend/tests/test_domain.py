@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -165,3 +166,25 @@ def test_missing_property_and_bad_dates(db):
         },
     )
     assert too_many.status_code == 422
+
+
+def test_overlap_constraint_catches_race_past_app_check(db):
+    """Simulates two API replicas that both passed _assert_available before either committed."""
+    session, created = db
+    prop = _property(session)
+    created.append(prop.id)
+    check_in = date.today() + timedelta(days=60)
+    body = {
+        "property_id": prop.id,
+        "check_in": check_in.isoformat(),
+        "check_out": (check_in + timedelta(days=3)).isoformat(),
+        "guests": 1,
+    }
+
+    with patch("app.services.reservations._assert_available"):
+        first = client.post("/reservations", json=body)
+        second = client.post("/reservations", json=body)
+
+    assert first.status_code == 201
+    assert second.status_code == 409
+    assert second.json()["detail"] == "Those dates are already booked"

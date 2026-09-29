@@ -1,6 +1,7 @@
 from datetime import date
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.constants import DEMO_USER_ID
@@ -70,6 +71,18 @@ def _assert_available(
         raise ConflictError("Those dates are already booked")
 
 
+def _commit_stay(db: Session) -> None:
+    # _assert_available is a fast path; the reservations_no_overlap constraint is what
+    # actually stops two API replicas from booking the same dates concurrently.
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        if "reservations_no_overlap" in str(exc.orig):
+            raise ConflictError("Those dates are already booked") from exc
+        raise
+
+
 def book_reservation(
     db: Session,
     *,
@@ -94,7 +107,7 @@ def book_reservation(
         status=ReservationStatus.CONFIRMED,
     )
     db.add(reservation)
-    db.commit()
+    _commit_stay(db)
     db.refresh(reservation)
     reservation.property = prop
     return _reservation_out(reservation)
@@ -137,7 +150,7 @@ def update_reservation(
     else:
         raise ValidationError("Unknown action")
 
-    db.commit()
+    _commit_stay(db)
     db.refresh(reservation)
     return _reservation_out(reservation)
 
