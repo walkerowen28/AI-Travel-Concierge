@@ -1,116 +1,70 @@
 # AI Travel Concierge
 
-AI-assisted travel stay browser and booking concierge (MVP learning project).
+A short-term rental app where guests can browse, book, and manage stays, or just ask an AI concierge to do it for them.
 
-## Architecture
+## Demo
 
-Three processes, each its own container. That is the shape a later Kubernetes cluster would use: one Deployment per service, an Ingress in front of `web`, and Postgres either in-cluster or a managed database.
+<!-- TODO: add demo video (e.g. drag an .mp4 into a GitHub comment and paste the link here, or embed a YouTube/Loom thumbnail) -->
 
-| Piece | Image | Role | Host port |
-|-------|-------|------|-----------|
-| Database | `postgres:16` | Persistent data | **5432** |
-| API | `backend/Dockerfile` (FastAPI + Uvicorn) | JSON API (`/health`, later booking + chat) | **8000** |
-| Web | `frontend/Dockerfile` (built React app served by nginx) | Browser UI. nginx proxies `/api` to the `api` service | **8080** |
+> Demo video coming soon.
 
-FastAPI is the API framework; Uvicorn is the HTTP server inside the API container. The React UI is a built static site, not Vite's dev server, so the web container does not need Node at runtime.
+## Overview
 
-The browser always calls `/api/...`. Local Vite and container nginx both strip that prefix before FastAPI sees the path (`/api/health` becomes `/health`).
+AI Travel Concierge is a full-stack MVP that pairs a traditional booking UI with an LLM agent that can take real actions against the same backend.
 
-## Prerequisites
+**What it does**
 
-Docker. For hot-reload development on the host you also need Python 3.11+, Node 20+, and [`uv`](https://docs.astral.sh/uv/).
+- Browse and filter about two dozen seeded stays by city, price, guests, and dates
+- View property details, house rules, and nearby restaurants and activities
+- Book, extend, and cancel reservations, and report issues on a stay
+- Chat with an AI concierge that searches stays, answers questions about a reservation, and makes booking changes by calling tools, with each tool call shown in the chat
 
-```bash
-export PATH="$PWD/.venv/bin:$(brew --prefix node@20)/bin:$PATH"
-cp .env.example .env
-```
+**Components**
 
-## Full stack in containers
+| Component | Tech | Role |
+|-----------|------|------|
+| Web | React + TypeScript (Vite), served by nginx | Browse/book/reservations UI and chat panel; proxies `/api` to the API |
+| API | FastAPI + SQLAlchemy + Alembic | REST endpoints, business rules, and the AI agent |
+| Agent | OpenAI Agents SDK | Tool-calling concierge wired to the API's service layer |
+| Database | PostgreSQL 16 | Properties, reservations, issues |
+| Runtime | Docker Compose, Kubernetes (kind) | Compose for quick local runs; Kubernetes with replicated web and API |
 
-Stop any host process already bound to ports 8000 or 5173, then:
+**Goal.** Build a real, end-to-end product in about 30 hours to get hands-on experience with LLM tool calling, containerization, and Kubernetes, while learning to use AI-assisted development well. The whole project was planned, built, and iterated on with [Cursor](https://cursor.com), shipped as one reviewed pull request per block.
 
-```bash
-docker compose up -d --build
-```
+Scope is intentionally MVP: a single demo guest, with no auth, payments, or live maps data.
 
-- UI: http://localhost:8080
-- API: http://localhost:8000/health
-- UI → API: http://localhost:8080/api/health
+## AI Concierge (LLM API)
 
-```bash
-docker compose down          # stop containers
-docker compose down -v       # also delete Postgres data
-```
+The concierge is an [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) agent (`gpt-4.1-mini` by default) exposed through `POST /chat`. It doesn't know anything about the catalog on its own. Every fact and every change comes from a tool.
 
-## Host dev (hot reload)
+**Tools** (`backend/app/agent/tools.py`)
 
-Use this when you are changing code. Only Postgres stays in Docker.
+| Tool | What it does |
+|------|--------------|
+| `search_properties` | Filter stays by city, max price, guests, and availability |
+| `get_property` | Full details for one stay |
+| `get_house_rules` | Rules for the current reservation |
+| `suggest_nearby` | Seeded restaurants and activities near a stay |
+| `list_reservations` | The guest's reservations |
+| `book_reservation` | Create a booking |
+| `extend_stay` | Move check-out later |
+| `cancel_reservation` | Cancel a confirmed stay |
+| `report_issue` | File an issue against a stay |
 
-```bash
-docker compose up -d db
+**How a chat turn works**
 
-# terminal 2
-cd backend && uv sync --group dev && uv run uvicorn app.main:app --reload --port 8000
+1. The chat panel sends the full conversation, plus an optional `reservation_id` when opened from a reservation ("my stay").
+2. The API runs the agent with a system prompt that forbids inventing properties, prices, or reservations and requires tools for facts and changes.
+3. The agent calls tools (up to 8 turns). Each tool calls the same service functions the REST API uses, so validation and availability rules can't be bypassed.
+4. The response returns the assistant's message plus **tool traces**, which the UI shows as `tool used: search_properties — city='Austin' max_price=200 …`, making the agent's behavior visible and easy to trust.
 
-# terminal 3
-cd frontend && npm install && npm run dev
-```
+Example prompts: "quiet loft in Austin under $200 for 2", "what are the house rules for my stay?", "extend my stay by 2 nights".
 
-| Piece | Shutdown |
-|-------|----------|
-| Frontend | `Ctrl+C` in the `npm run dev` terminal |
-| Backend | `Ctrl+C` in the `uvicorn` terminal |
-| Database | `docker compose stop db` |
+**Failure handling.** A missing `OPENAI_API_KEY`, a rejected key, exhausted credits, or rate limits come back as clear `422` messages in the chat instead of a generic 500. Tool errors (for example, "Those dates are already booked") go back to the model as text so it can explain them to the guest.
 
-- Health: http://localhost:8000/health
-- UI: http://localhost:5173
-- Vite proxy: `/api` on **5173** forwards to FastAPI on **8000**
+## Kubernetes Architecture
 
-Do not run host Uvicorn and the `api` container at the same time. Both want port 8000.
-
-## Domain data
-
-From `backend/`, with Postgres running:
-
-```bash
-uv sync --group dev
-uv run alembic upgrade head
-uv run python -m app.seed
-```
-
-That loads demo guest Alex (`user id` 1), about two dozen properties, and one upcoming reservation. Seed skips itself if properties already exist.
-
-### UI (Block 2)
-
-| Route | What it does |
-|-------|----------------|
-| `/` | Browse + filters |
-| `/properties/:id` | Detail, house rules, nearby, book form |
-| `/reservations` | Cancel, extend, report issue |
-
-- Vite: http://localhost:5173
-- Container web: http://localhost:8080
-- API docs: http://localhost:8000/docs
-
-If the API is the Compose container, rebuild it after backend changes: `docker compose up -d --build api`. Rebuild the web image after frontend changes: `docker compose up -d --build web`. Migrations still run from the host against the published Postgres port.
-
-### AI Concierge (Block 3)
-
-Set `OPENAI_API_KEY` in `.env`, then restart the API (host or `docker compose up -d --build api`).
-
-- Chat endpoint: `POST /chat` with `{ "messages": [{ "role": "user", "content": "..." }], "reservation_id": 1 }`
-- UI: floating **AI Concierge** button on every page; tool traces show as `tool used: search_properties`
-- On Reservations, **Chat about this stay** sets `?reservation_id=` context for house rules / nearby / extend
-
-Example prompts:
-- “quiet loft in Austin under $200 for 2”
-- “what are the house rules for my stay?”
-- “what’s nearby for dinner?”
-- “extend my stay by 2 nights” (with a reservation context)
-
-## Local Kubernetes (Block 4)
-
-The same images run on a local [kind](https://kind.sigs.k8s.io/) cluster with **2 web** and **2 API** replicas behind Services. This is deliberately more than the app needs; the point is practicing Deployments, Services, probes, Secrets, Jobs, and rollouts. Compose stays the fast dev loop.
+The app runs on a local [kind](https://kind.sigs.k8s.io/) cluster with **2 web replicas** and **2 API replicas** behind Services. That's more than the app needs; the point was practicing real Kubernetes patterns.
 
 ```mermaid
 flowchart LR
@@ -129,46 +83,131 @@ flowchart LR
     a2 -.-> openai
 ```
 
-| Object | File | Why |
-|--------|------|-----|
-| Namespace `travel` | `k8s/namespace.yaml` | `kind delete cluster` or `kubectl delete ns travel` resets everything |
-| ConfigMap + demo `db-credentials` Secret | `k8s/config.yaml` | Non-secret config and the Compose-equivalent DB password |
-| `api-secrets` Secret | created by `make k8s-secret` | `OPENAI_API_KEY` from `.env`; never committed |
-| Postgres StatefulSet + PVC | `k8s/postgres.yaml` | One replica with a stable volume; Postgres is not scaled |
-| API Deployment ×2 + Service `api` | `k8s/api.yaml` | Service name matches `proxy_pass http://api:8000/` in `nginx.conf` |
-| Web Deployment ×2 + NodePort Service | `k8s/web.yaml` | kind maps NodePort 30080 to host **8090** |
-| `db-migrate` Job | `k8s/jobs/db-migrate.yaml` | Migrations and seed run once, not in each API replica |
+The browser only talks to nginx. nginx serves the React build and forwards `/api/*` to the `api` Service, which load-balances across API pods.
+
+| Object | File | Purpose |
+|--------|------|---------|
+| Namespace `travel` | `k8s/namespace.yaml` | Everything lives here; easy to reset |
+| ConfigMap + `db-credentials` Secret | `k8s/config.yaml` | App config and demo DB credentials |
+| `api-secrets` Secret | created by `make k8s-secret` | `OPENAI_API_KEY` from `.env`, never committed |
+| Postgres StatefulSet + PVC | `k8s/postgres.yaml` | One replica with a persistent volume |
+| API Deployment ×2 + `api` Service | `k8s/api.yaml` | Liveness/readiness probes, zero-downtime rolling updates |
+| Web Deployment ×2 + NodePort Service | `k8s/web.yaml` | Exposed on host port **8090** |
+| `db-migrate` Job | `k8s/jobs/db-migrate.yaml` | Runs migrations and seed once per deploy |
+
+The `Makefile` wraps the multi-step workflows (build images, load them into kind, apply manifests, run the migration Job). Each target is just `docker`, `kind`, and `kubectl` commands, echoed as they run.
+
+**Useful commands** (after `make k8s-up`)
+
+```bash
+kubectl config set-context kind-travel --namespace=travel   # default to this app's namespace
+kubectl config use-context kind-travel
+
+kubectl get pods -w                   # watch pods live
+kubectl get pods,svc,jobs,pvc         # everything in the namespace
+kubectl logs -l app=api --prefix      # logs from both API pods
+kubectl describe pod <pod-name>       # events, probe failures, restarts
+kubectl delete pod -l app=api         # kill API pods and watch them get recreated
+kubectl scale deployment/api --replicas=3
+kubectl rollout restart deployment/web
+
+make k8s-lb        # 8 requests showing which web and API pod answered each one
+make k8s-redeploy  # rebuild images after code changes and roll them out
+make k8s-down      # delete the cluster
+```
+
+Things worth trying: run `make k8s-lb` to watch load balancing (via `X-Web-Pod` and `X-Api-Pod` response headers), delete API pods mid-traffic to see self-healing, or `kubectl scale statefulset/db --replicas=0` to watch API pods go unready without restarting.
+
+## Design Decisions
+
+- **Agent tools reuse the service layer.** The LLM goes through the same validation and availability checks as the REST API, rather than having its own SQL or business logic.
+- **Tool traces over a black box.** Returning which tools ran makes the agent debuggable and shows guests (and reviewers) that answers come from real data.
+- **Stateless chat.** The client sends the conversation each turn, so any API replica can handle any request with no session store.
+- **Double booking is prevented by the database.** An app-level availability check is a check-then-insert race once there are multiple replicas. A Postgres exclusion constraint on property and date range is the real guarantee, and violations map to `409 Conflict`.
+- **Separate liveness and readiness.** `/health/live` never touches Postgres, so a database outage marks API pods unready (no traffic) instead of restart-looping them. `/health/ready` returns `503` when the database is down.
+- **Migrations as a Job.** Running `alembic upgrade` on every API pod's startup would race across replicas, so it runs once as a Kubernetes Job.
+- **One `/api` contract everywhere.** The browser always calls `/api/...`; Vite in development and nginx in containers both strip the prefix, so the frontend code is identical across Vite, Compose, and Kubernetes.
+- **Sync endpoints, async chat.** CRUD endpoints are plain `def` because SQLAlchemy is synchronous and FastAPI runs them in a thread pool. `/chat` is `async` because it awaits the Agents SDK's network calls to OpenAI.
+- **Pinned Kubernetes 1.34.** Kubernetes 1.35+ won't start on Docker Desktop versions that still use cgroup v1, so the kind node image is pinned for compatibility.
+
+## How I Built It with Cursor
+
+I used Cursor as a pair programmer across the whole project, with a deliberate workflow rather than one-shot generation:
+
+- **Plan before code.** Each block started in Plan/Ask mode: scope, "done when" criteria, what's explicitly out of scope, and a time box.
+- **One block per branch and PR.** Agent mode implemented one block at a time. I reviewed each diff, ran the app and tests, and merged it as its own pull request:
+  - [#1](https://github.com/walkerowen28/AI-Travel-Concierge/pull/1) API and web containers
+  - [#2](https://github.com/walkerowen28/AI-Travel-Concierge/pull/2) Domain model, migrations, seed data, REST API
+  - [#3](https://github.com/walkerowen28/AI-Travel-Concierge/pull/3) Browse, book, and reservations UI
+  - [#4](https://github.com/walkerowen28/AI-Travel-Concierge/pull/4) AI concierge agent and chat panel
+  - [#5](https://github.com/walkerowen28/AI-Travel-Concierge/pull/5) Local Kubernetes with replicated web and API
+- **Ask mode to learn, not just ship.** I used it to understand tradeoffs as they came up: sync vs async endpoints, how requests flow through nginx and Services, and liveness vs readiness probes.
+- **Debugging with evidence.** Real issues were diagnosed from logs and container state rather than guessed at. For example, a chat `422` turned out to be a stale container missing the API key, followed by an exhausted-credits error that led to clearer error mapping. A Kubernetes version incompatibility traced back to cgroup v1 on an older Docker Desktop.
+- **Tests that don't burn credits.** Agent tests mock the model and exercise tools against a real database, so the suite runs without an OpenAI key.
+
+## Getting Started
 
 ### Prerequisites
 
-Docker, `kind` (`brew install kind`), and a matching `kubectl`. `make k8s-tools` downloads kubectl 1.34 into `./.bin/`, which the Makefile prefers. The cluster pins Kubernetes 1.34 because 1.35+ will not start on Docker Desktop versions that still use cgroup v1.
-
-Give Docker at least ~2 GB of memory. Compose and kind can run side by side (8080 vs 8090), but stop Compose if pods get OOM-killed.
-
-### Commands
+- [Docker](https://docs.docker.com/get-docker/) with about 2 GB of memory
+- For Kubernetes: [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) (`brew install kind`), `kubectl`, and `make`
+- Optional: an [OpenAI API key](https://platform.openai.com/api-keys) with credits. Everything except chat works without one.
 
 ```bash
-make k8s-up         # create cluster, build + load images, secret, apply, migrate, wait
-make k8s-status     # pods, services, jobs, volumes
-make k8s-lb         # 8 requests showing which web and api pod answered
-make k8s-redeploy   # after code changes: rebuild images, migrate, rolling restart
-make k8s-logs       # recent logs from both api pods
-make k8s-down       # delete the cluster (and its database)
+git clone https://github.com/walkerowen28/AI-Travel-Concierge.git
+cd AI-Travel-Concierge
+cp .env.example .env    # then set OPENAI_API_KEY=... to enable chat
 ```
 
-- UI: http://localhost:8090
-- API through nginx: http://localhost:8090/api/health
+### Option A: Kubernetes
 
-Changed `OPENAI_API_KEY` in `.env`? Run `make k8s-secret` and then `make k8s-redeploy` (env vars are read when a pod starts).
+```bash
+make k8s-tools   # optional: downloads a matching kubectl into ./.bin if you don't have one
+make k8s-up      # create cluster, build + load images, apply manifests, migrate + seed
+```
 
-### Things to try
+Open http://localhost:8090. Run `make k8s-down` to delete the cluster.
 
-- **Load balancing:** `make k8s-lb`. The `X-Web-Pod` header comes from nginx and `X-Api-Pod` from FastAPI (set via the Downward API `POD_NAME`).
-- **Self-healing:** `.bin/kubectl --context kind-travel -n travel delete pod -l app=api --wait=false`, then `make k8s-status`. The Deployment recreates pods, and readiness keeps traffic off them until `/health/ready` passes.
-- **Zero-downtime rollout:** run `make k8s-redeploy` while looping `make k8s-lb`. `maxUnavailable: 0` keeps both replicas serving during the restart.
-- **Liveness vs readiness:** `/health/live` never touches Postgres, so a DB outage marks API pods unready instead of restart-looping them. Try `kubectl scale statefulset/db --replicas=0` and watch the api pods go `0/1` without restarting.
+If you change `OPENAI_API_KEY` later, run `make k8s-secret && make k8s-redeploy`.
 
-### Behavior changes for multiple replicas
+### Option B: Docker Compose (fastest)
 
-- Double booking is blocked by a Postgres exclusion constraint (`reservations_no_overlap`). The app-level availability check alone is a check-then-insert race once two API pods (or two threads) book at the same time.
-- `CORS_ORIGINS` is an env var (comma-separated) instead of a hardcoded list.
+```bash
+docker compose up -d --build
+docker compose run --rm api sh -c "alembic upgrade head && python -m app.seed"
+```
+
+- UI: http://localhost:8080
+- API docs: http://localhost:8000/docs
+
+Run `docker compose down` to stop, or `docker compose down -v` to also delete the database.
+
+### Local development (hot reload)
+
+Requires Python 3.11+, Node 20+, and [uv](https://docs.astral.sh/uv/). Postgres stays in Docker.
+
+```bash
+docker compose up -d db
+
+# terminal 1: API on :8000
+cd backend
+uv sync --group dev
+uv run alembic upgrade head && uv run python -m app.seed
+uv run uvicorn app.main:app --reload --port 8000
+
+# terminal 2: UI on :5173 (proxies /api to :8000)
+cd frontend
+npm install && npm run dev
+```
+
+Don't run host Uvicorn and the Compose `api` container at the same time; both use port 8000.
+
+### Tests
+
+With Postgres running and migrated (see above):
+
+```bash
+cd backend && uv run pytest
+```
+
+The suite covers domain rules (booking, overlap, extend, cancel, issues), agent tools with the model mocked, health probes, and the database-level double-booking guard.
