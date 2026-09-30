@@ -29,7 +29,7 @@ AI Travel Concierge is a full-stack MVP that pairs a traditional booking UI with
 | Database | PostgreSQL 16 | Properties, reservations, issues |
 | Runtime | Docker Compose, Kubernetes (kind) | Compose for quick local runs; Kubernetes with replicated web and API |
 
-**Goal.** Build a real, end-to-end product in about 30 hours to get hands-on experience with LLM tool calling, containerization, and Kubernetes, while learning to use AI-assisted development well. The whole project was planned, built, and iterated on with [Cursor](https://cursor.com), shipped as one reviewed pull request per block.
+**Goal.** Use AI-assisted development to speed up development of a real, end-to-end product with LLM tool calling, containerization, and Kubernetes. The whole project was planned, built, and iterated on with [Cursor](https://cursor.com), shipped as one reviewed pull request per block.
 
 Scope is intentionally MVP: a single demo guest, with no auth, payments, or live maps data.
 
@@ -95,29 +95,6 @@ The browser only talks to nginx. nginx serves the React build and forwards `/api
 | Web Deployment ×2 + NodePort Service | `k8s/web.yaml` | Exposed on host port **8090** |
 | `db-migrate` Job | `k8s/jobs/db-migrate.yaml` | Runs migrations and seed once per deploy |
 
-The `Makefile` wraps the multi-step workflows (build images, load them into kind, apply manifests, run the migration Job). Each target is just `docker`, `kind`, and `kubectl` commands, echoed as they run.
-
-**Useful commands** (after `make k8s-up`)
-
-```bash
-kubectl config set-context kind-travel --namespace=travel   # default to this app's namespace
-kubectl config use-context kind-travel
-
-kubectl get pods -w                   # watch pods live
-kubectl get pods,svc,jobs,pvc         # everything in the namespace
-kubectl logs -l app=api --prefix      # logs from both API pods
-kubectl describe pod <pod-name>       # events, probe failures, restarts
-kubectl delete pod -l app=api         # kill API pods and watch them get recreated
-kubectl scale deployment/api --replicas=3
-kubectl rollout restart deployment/web
-
-make k8s-lb        # 8 requests showing which web and API pod answered each one
-make k8s-redeploy  # rebuild images after code changes and roll them out
-make k8s-down      # delete the cluster
-```
-
-Things worth trying: run `make k8s-lb` to watch load balancing (via `X-Web-Pod` and `X-Api-Pod` response headers), delete API pods mid-traffic to see self-healing, or `kubectl scale statefulset/db --replicas=0` to watch API pods go unready without restarting.
-
 ## Design Decisions
 
 - **Agent tools reuse the service layer.** The LLM goes through the same validation and availability checks as the REST API, rather than having its own SQL or business logic.
@@ -126,9 +103,6 @@ Things worth trying: run `make k8s-lb` to watch load balancing (via `X-Web-Pod` 
 - **Double booking is prevented by the database.** An app-level availability check is a check-then-insert race once there are multiple replicas. A Postgres exclusion constraint on property and date range is the real guarantee, and violations map to `409 Conflict`.
 - **Separate liveness and readiness.** `/health/live` never touches Postgres, so a database outage marks API pods unready (no traffic) instead of restart-looping them. `/health/ready` returns `503` when the database is down.
 - **Migrations as a Job.** Running `alembic upgrade` on every API pod's startup would race across replicas, so it runs once as a Kubernetes Job.
-- **One `/api` contract everywhere.** The browser always calls `/api/...`; Vite in development and nginx in containers both strip the prefix, so the frontend code is identical across Vite, Compose, and Kubernetes.
-- **Sync endpoints, async chat.** CRUD endpoints are plain `def` because SQLAlchemy is synchronous and FastAPI runs them in a thread pool. `/chat` is `async` because it awaits the Agents SDK's network calls to OpenAI.
-- **Pinned Kubernetes 1.34.** Kubernetes 1.35+ won't start on Docker Desktop versions that still use cgroup v1, so the kind node image is pinned for compatibility.
 
 ## How I Built It with Cursor
 
@@ -159,8 +133,6 @@ cd AI-Travel-Concierge
 cp .env.example .env    # then set OPENAI_API_KEY=... to enable chat
 ```
 
-### Option A: Kubernetes
-
 ```bash
 make k8s-tools   # optional: downloads a matching kubectl into ./.bin if you don't have one
 make k8s-up      # create cluster, build + load images, apply manifests, migrate + seed
@@ -169,38 +141,6 @@ make k8s-up      # create cluster, build + load images, apply manifests, migrate
 Open http://localhost:8090. Run `make k8s-down` to delete the cluster.
 
 If you change `OPENAI_API_KEY` later, run `make k8s-secret && make k8s-redeploy`.
-
-### Option B: Docker Compose (fastest)
-
-```bash
-docker compose up -d --build
-docker compose run --rm api sh -c "alembic upgrade head && python -m app.seed"
-```
-
-- UI: http://localhost:8080
-- API docs: http://localhost:8000/docs
-
-Run `docker compose down` to stop, or `docker compose down -v` to also delete the database.
-
-### Local development (hot reload)
-
-Requires Python 3.11+, Node 20+, and [uv](https://docs.astral.sh/uv/). Postgres stays in Docker.
-
-```bash
-docker compose up -d db
-
-# terminal 1: API on :8000
-cd backend
-uv sync --group dev
-uv run alembic upgrade head && uv run python -m app.seed
-uv run uvicorn app.main:app --reload --port 8000
-
-# terminal 2: UI on :5173 (proxies /api to :8000)
-cd frontend
-npm install && npm run dev
-```
-
-Don't run host Uvicorn and the Compose `api` container at the same time; both use port 8000.
 
 ### Tests
 
