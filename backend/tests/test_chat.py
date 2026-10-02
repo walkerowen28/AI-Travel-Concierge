@@ -83,6 +83,29 @@ def test_search_properties_tool_uses_service_layer():
         session.close()
 
 
+def test_get_property_tool_resolves_misspelled_name():
+    session = SessionLocal()
+    created_ids: list[int] = []
+    try:
+        target = _property(session, title="Zqx Harbor Studio", city="Namecheck")
+        other = _property(session, title="Zqx Hilltop Villa", city="Namecheck")
+        created_ids.extend([target.id, other.id])
+        context = ConciergeContext(db=session)
+        wrapper = type("W", (), {"context": context})()
+
+        result = tool_module.get_property.__wrapped__(
+            wrapper, name="zqx harbour studoi", city="Namecheck", property_id=other.id
+        )
+        assert result.startswith(f"#{target.id} Zqx Harbor Studio")
+
+        ambiguous = tool_module.get_property.__wrapped__(wrapper, name="Zqx", city="Namecheck")
+        assert "Several properties match" in ambiguous
+        assert "Zqx Harbor Studio" in ambiguous and "Zqx Hilltop Villa" in ambiguous
+    finally:
+        _cleanup(session, created_ids)
+        session.close()
+
+
 def test_extend_stay_tool_updates_reservation():
     session = SessionLocal()
     created_property_ids: list[int] = []

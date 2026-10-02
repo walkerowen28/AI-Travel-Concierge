@@ -63,14 +63,38 @@ def search_properties(
 @function_tool
 def get_property(
     ctx: RunContextWrapper[ConciergeContext],
-    property_id: int,
+    name: str | None = None,
+    city: str | None = None,
+    property_id: int | None = None,
 ) -> str:
-    """Get full details for one property, including house rules and nearby spots."""
-    prop = property_service.get_property(ctx.context.db, property_id)
+    """Get full details for one property, including house rules and nearby spots.
+
+    Prefer `name` (the property title as the guest wrote it; typos are fine), optionally
+    narrowed by `city`. Only pass `property_id` if it appeared in a tool result this turn.
+    """
+    db = ctx.context.db
+    if name:
+        matches = property_service.find_properties_by_name(db, name, city=city)
+        ctx.context.trace(
+            "get_property", f"name={name!r} city={city!r} matches={len(matches)}"
+        )
+        if not matches:
+            return f"No property named {name!r} was found. Use search_properties to list stays."
+        if len(matches) > 1:
+            options = "\n".join(f"#{prop.id} {prop.title} — {prop.city}" for prop in matches)
+            return f"Several properties match {name!r}; ask the guest which one:\n{options}"
+        return _format_property(matches[0])
+
+    if property_id is None:
+        return "Error: provide the property name (preferred) or a property_id."
+    prop = property_service.get_property(db, property_id)
     ctx.context.trace("get_property", f"property_id={property_id}")
     if prop is None:
         return f"Property {property_id} was not found."
+    return _format_property(prop)
 
+
+def _format_property(prop) -> str:
     nearby = "; ".join(
         f"{spot.get('name')} ({spot.get('kind')}): {spot.get('blurb')}"
         for spot in (prop.nearby or [])
