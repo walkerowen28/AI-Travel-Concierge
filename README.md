@@ -4,9 +4,9 @@ A short-term rental app where guests can browse, book, and manage stays, or just
 
 ## Demo
 
-<!-- TODO: add demo video (e.g. drag an .mp4 into a GitHub comment and paste the link here, or embed a YouTube/Loom thumbnail) -->
+Demo: Using AI-Travel-Concierge to look up stays, get details on stays, book a stay, and update a reservation.
 
-> Demo video coming soon.
+https://github.com/user-attachments/assets/0567211e-7957-4c8a-ac6e-e12ba26c35c9
 
 ## Overview
 
